@@ -32,8 +32,7 @@ void calibrate(vector<sensor_color_t> & colors, vector<sensor_light_t> & lights)
 	}
 }
 
-void printCalibration(const vector<sensor_color_t> & v){
-	cout << "Color info: " << endl;
+void processCalibration(const vector<sensor_color_t> & v, vector<vector<int>> & sensorReads){
 	int lowestRed = -1;
 	int highestRed = -1;
 	for(unsigned int i = 0; i < v.size(); i++){
@@ -45,13 +44,11 @@ void printCalibration(const vector<sensor_color_t> & v){
 			highestRed = v[i].reflected_red;
 		}
 	}
-	cout << "    Min color: " << lowestRed << endl;
-	cout << "    Max color: " << highestRed << endl;
-	cout << "    highest difference: " << highestRed - lowestRed << endl;
+	sensorReads[0][0] = lowestRed; 
+	sensorReads[0][1] = highestRed;
 }
 
-void printCalibration(const vector<sensor_light_t> & v){
-	cout << "Light info: " << endl;
+void processCalibration(const vector<sensor_light_t> & v, vector<vector<int>> & sensorReads){
 	int lowestAmbientLight = -1;
 	int highestAmbientLight = -1;
 	int lowestReflected = -1;
@@ -71,16 +68,28 @@ void printCalibration(const vector<sensor_light_t> & v){
 			highestReflected = v[i].reflected;
 		}
 	}
-	cout << "    Min ambient: "  << lowestAmbient << endl;
-	cout << "    Max ambient: "  << highestAmbient << endl;
-	cout << "    Ambient difference: "  << highestAmbient - lowestAmbient << endl;
-	cout << "    Min reflect: "  << lowestReflected << endl;
-	cout << "    Max reflect: "  << highestReflected << endl;
-	cout << "    Reflect difference: "  << highestReflected - lowestReflected << endl;
-	cout << endl;
+	sensorReads[1][0] = lowestAmbientLight;
+	sensorReads[1][1] = highestAmbientLight;
+	sensorReads[1][2] = lowestReflected;
+	sensorReads[1][3] = highestReflected;
 }
 
-void startSteering(BrickPi3 controller){
+void printCalibration(const vector<vector<int>> & sensorReads){
+	cout << "Color info: " << endl;
+	cout << "    Min color: " << sensorReads[0][0] << endl;
+	cout << "    Max color: " << sensorReads[0][1]  << endl;
+	cout << "    highest difference: " << sensorReads[0][0]  - sensorReads[0][1]  << endl;
+	
+	cout << "Light info: " << endl;
+	cout << "    Min ambient: "  << sensorReads[1][0] << endl;
+	cout << "    Max ambient: "  << sensorReads[1][1] << endl;
+	cout << "    Ambient difference: "  << sensorReads[1][1] - sensorReads[1][0] << endl;
+	cout << "    Min reflect: "  << sensorReads[1][2] << endl;
+	cout << "    Max reflect: "  << sensorReads[1][3] << endl;
+	cout << "    Reflect difference: "  << sensorReads[1][3] - sensorReads[1][2] << endl;
+}
+
+void startSteering(BrickPi3 controller, const vector<vector<int>> & sensorReads ){
 	sensor_light_t Light3;
 	sensor_color_t Color1;
    // current date/time based on current system
@@ -93,15 +102,15 @@ void startSteering(BrickPi3 controller){
 		// left sensor right motor
 		controller.get_sensor(PORT_3, Light3);
 		uint16_t val = Light3.reflected;
-		if(val < lowestReflected) val = lowestReflected;
-		if(val > highestReflected) val = highestReflected;
-		int16_t rightmotorpower = (100*(val - lowestReflected))/(highestReflected - lowestReflected);
+		if(val < sensorReads[1][2]) val = sensorReads[1][2];
+		if(val > sensorReads[1][3]) val = sensorReads[1][3];
+		int16_t rightmotorpower = (100*(val - sensorReads[1][2]))/(sensorReads[1][3] - sensorReads[1][2]);
 
 		controller.get_sensor(PORT_4, Color1);
 		val = Color1.reflected_red;
-		if(val < lowestAmbient) val = lowestAmbient;
-		if(val > highestReflected) val = highestAmbient;
-		int16_t leftmotorpower = (100*(val - highestAmbient))/(lowestAmbient- highestAmbient);
+		if(val < sensorReads[0][0]) val = sensorReads[0][0];
+		if(val > sensorReads[0][1]) val = sensorReads[0][1];
+		int16_t leftmotorpower = (100*(val - sensorReads[0][1]))/(sensorReads[0][0]- sensorReads[0][1]);
 
 		// right sensor left motor
 //		if(leftmotorpower < 10 && rightmotorpower < 10){
@@ -151,14 +160,18 @@ int main(){
 
 	vector<sensor_color_t> colors = {};
 	vector<sensor_light_t> lights = {};
+	// sensorreads i = type sensor (0 = color, 1 = light) j = type info (0,0 = reflected red | 1,0 = reflected ambient
+	vector<vector<int>> sensorReads = {{}, {}};
 
 	calibrate(colors, lights);
-	displayCalibration(colors);
-	displayCalibration(lights);
-		
+	processCalibration(colors, sensorReads);
+	processCalibration(lights, sensorReads);
+	
+	printCalibration(sensorReads);
+	
 	sleep(5);
 
-	startSteering(BP); // v1
+	startSteering(BP, sensorReads); // v1
 	//startSteering2(BP); //v2
 }
 
