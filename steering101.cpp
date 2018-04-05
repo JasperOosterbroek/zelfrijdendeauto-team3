@@ -17,8 +17,8 @@ void calibrate(vector<sensor_color_t> & colors, vector<sensor_light_t> & lights)
 	while(counter < 10){
 		cout << counter << endl;
 		if(counter == 5){
-			BP.set_motor_position(PORT_B, 180);
-			BP.set_motor_position(PORT_C, 180);
+//			BP.set_motor_position(PORT_B, 180);
+//			BP.set_motor_position(PORT_C, 180);
 		}
 		if(BP.get_sensor(PORT_4, Color1) == 0){
 			colors.push_back(Color1);
@@ -26,13 +26,13 @@ void calibrate(vector<sensor_color_t> & colors, vector<sensor_light_t> & lights)
 		if(BP.get_sensor(PORT_3, Light3) == 0){
 			lights.push_back(Light3);
 		}
-		cout << endl;
 		counter++;
-		sleep(1);
+		cout << endl;
+		usleep(500000);
 	}
 }
 
-void processCalibration(const vector<sensor_color_t> & v, vector<vector<int>> & sensorReads){
+void processCalibrationColor(const vector<sensor_color_t> & v, vector<vector<int>> & sensorReads){
 	int lowestRed = -1;
 	int highestRed = -1;
 	for(unsigned int i = 0; i < v.size(); i++){
@@ -44,11 +44,11 @@ void processCalibration(const vector<sensor_color_t> & v, vector<vector<int>> & 
 			highestRed = v[i].reflected_red;
 		}
 	}
-	sensorReads[0][0] = lowestRed; 
-	sensorReads[0][1] = highestRed;
+	sensorReads[0].push_back(lowestRed); 
+	sensorReads[0].push_back(highestRed);
 }
 
-void processCalibration(const vector<sensor_light_t> & v, vector<vector<int>> & sensorReads){
+void processCalibrationLight(const vector<sensor_light_t> & v, vector<vector<int>> & sensorReads){
 	int lowestAmbientLight = -1;
 	int highestAmbientLight = -1;
 	int lowestReflected = -1;
@@ -68,17 +68,17 @@ void processCalibration(const vector<sensor_light_t> & v, vector<vector<int>> & 
 			highestReflected = v[i].reflected;
 		}
 	}
-	sensorReads[1][0] = lowestAmbientLight;
-	sensorReads[1][1] = highestAmbientLight;
-	sensorReads[1][2] = lowestReflected;
-	sensorReads[1][3] = highestReflected;
+	sensorReads[1].push_back(lowestAmbientLight);
+	sensorReads[1].push_back(highestAmbientLight);
+	sensorReads[1].push_back(lowestReflected);
+	sensorReads[1].push_back(highestReflected);
 }
 
 void printCalibration(const vector<vector<int>> & sensorReads){
 	cout << "Color info: " << endl;
 	cout << "    Min color: " << sensorReads[0][0] << endl;
 	cout << "    Max color: " << sensorReads[0][1]  << endl;
-	cout << "    highest difference: " << sensorReads[0][0]  - sensorReads[0][1]  << endl;
+	cout << "    highest difference: " << sensorReads[0][1]  - sensorReads[0][0]  << endl;
 	
 	cout << "Light info: " << endl;
 	cout << "    Min ambient: "  << sensorReads[1][0] << endl;
@@ -89,65 +89,116 @@ void printCalibration(const vector<vector<int>> & sensorReads){
 	cout << "    Reflect difference: "  << sensorReads[1][3] - sensorReads[1][2] << endl;
 }
 
-void startSteering(BrickPi3 controller, const vector<vector<int>> & sensorReads ){
+void startSteering(const vector<vector<int>> & sensorReads ){
 	sensor_light_t Light3;
 	sensor_color_t Color1;
-   // current date/time based on current system
-	time_t now = time(0);
-
-	int counter = 0;
-	int power = -20;
-	while(true){
-
-		// left sensor right motor
-		controller.get_sensor(PORT_3, Light3);
-		uint16_t val = Light3.reflected;
-		if(val < sensorReads[1][2]) val = sensorReads[1][2];
-		if(val > sensorReads[1][3]) val = sensorReads[1][3];
-		int16_t rightmotorpower = (100*(val - sensorReads[1][2]))/(sensorReads[1][3] - sensorReads[1][2]);
-
-		controller.get_sensor(PORT_4, Color1);
-		val = Color1.reflected_red;
-		if(val < sensorReads[0][0]) val = sensorReads[0][0];
-		if(val > sensorReads[0][1]) val = sensorReads[0][1];
-		int16_t leftmotorpower = (100*(val - sensorReads[0][1]))/(sensorReads[0][0]- sensorReads[0][1]);
-
-		// right sensor left motor
-//		if(leftmotorpower < 10 && rightmotorpower < 10){
-//			controller.set_motor_power(PORT_B,power);
-//			controller.set_motor_power(PORT_C,power);
-//		}else{
-			controller.set_motor_power(PORT_B, power + (rightmotorpower*-1));
-			controller.set_motor_power(PORT_C, power + (leftmotorpower*-1));
-//		}
-		cout << "motors: " << leftmotorpower << " - " << rightmotorpower << endl;
-		cout << endl;
-		counter++;
-		if(counter == 100){
-			break;
-		}
-	}
-}
-
-void startSteering2(BrickPi3 controller){
-	sensor_color_t steerColor;
-	sensor_light_t steerLight;
-
-	float tollerance = 1.07; // in percentage
-	int moveRightMotor = 50;
-	int moveLeftMotor = 50;
+	
+	int kp = 10; //1000
+	int ki = 1; //100
+	int kd = 100; //10000
+	int offsetC = (sensorReads[0][0] + sensorReads[0][1]) /2;
+	int offsetL = (sensorReads[1][2] + sensorReads[1][3]) /2;
+	
+	int integralC = 0;
+	int integralL = 0;
+	int lastErrorC = 0;
+	int lastErrorL = 0;
+	int derivativeC = 0;
+	int derivativeL = 0;
+	int errorC = 0;
+	int errorL = 0;
+	int tolleranceC = 5; //percentage
+	int tolleranceL = 5; //percentage
+	
+	int motorPower = -25;
 	
 	while(true){
-		if(controller.get_sensor(PORT_3, steerColor) == 0){
-			
+		BP.get_sensor(PORT_4, Color1);
+		uint16_t valC = Color1.reflected_red;
+		// makes it so it cant go lower or higher
+		if(valC < sensorReads[0][0]) valC = sensorReads[0][0];
+		if(valC > sensorReads[0][1]) valC = sensorReads[0][1];
+		//int16_t leftmotorpower = (100*(val - sensorReads[0][1]))/(sensorReads[0][0]- sensorReads[0][1]);
+		if(valC > offsetC * ((100-tolleranceC)/100) && valC < offsetC * ((100+tolleranceC)/100) ){
+			errorC = 0;
+		}else{
+			errorC = valC - offsetC;
 		}
-		if(controller.get_sensor(PORT_4, steerLight) == 0){
 		
+		integralC = integralC + errorC;
+		derivativeC = errorC - lastErrorC;
+		int turnC = (kp*errorC) + (ki*integralC) + (kd*derivativeC);
+		turnC = turnC/100;
+//		turnC = turnC * -1;
+		
+		BP.get_sensor(PORT_3, Light3);
+		uint16_t valL = Light3.reflected;
+		// makes it so it cant go lower or higher
+		if(valL < sensorReads[1][2]) valL = sensorReads[1][2];
+		if(valL > sensorReads[1][3]) valL = sensorReads[1][3];
+		//int16_t rightmotorpower = (100*(val - sensorReads[1][2]))/(sensorReads[1][3] - sensorReads[1][2]);
+		if(valL > offsetL * ((100-tolleranceL)/100) && valL < offsetL * ((100+tolleranceL)/100) ){
+			errorL = 0;
+		}else{
+			errorL = valL - offsetL;
 		}
+		integralL = integralL + errorL;
+		derivativeL = errorL - lastErrorL;
+		int turnL = (kp*errorL) + (ki*integralL) + (kd*derivativeL);
+		turnL = turnL/100;
+//		turnL = turnL * -1;
+
+		int16_t rightMotorPower = motorPower + turnC;
+		int16_t leftMotorPower = motorPower + turnL;
+		
+//		if(leftmotorpower < 10 && rightmotorpower < 10){
+//			BP.set_motor_power(PORT_B,motorPower);
+//			BP.set_motor_power(PORT_C,motorPower);
+//		}else{
+//			BP.set_motor_power(PORT_B, motorPower + (rightmotorpower*-1));
+//			BP.set_motor_power(PORT_C, motorPower + (leftmotorpower*-1));
+//		}
+		BP.set_motor_power(PORT_B, rightMotorPower);
+		BP.set_motor_power(PORT_C, leftMotorPower);
+		
+		cout << endl;
+		cout << "MotorC debug:" << endl;
+		cout << "    valC: " << valC << endl;
+		cout << "    errorC: " << errorC << endl;
+		cout << "    lastErrorC: " << lastErrorC << endl;
+		cout << "    offsetC: " << offsetC << endl;
+		cout << "        sensorReads[0][0]: " << sensorReads[0][0] << endl;
+		cout << "        sensorReads[0][1]: " << sensorReads[0][1] << endl;
+		cout << "    integralC: " << integralC << endl;
+		cout << "    derivativeC: " << derivativeC << endl;
+		cout << "    turnC: " << turnC << endl;
+		cout << "    rightMotorPower: " << rightMotorPower << endl;
+		
+		cout << "MotorL debug:" << endl;
+		cout << "    valL: " << valL << endl;
+		cout << "    errorL: " << errorL << endl;
+		cout << "    lastErrorL: " << lastErrorL << endl;
+		cout << "    offsetL: " << offsetL << endl;
+		cout << "        sensorReads[0][0]: " << sensorReads[1][2] << endl;
+		cout << "        sensorReads[0][1]: " << sensorReads[1][3] << endl;
+		cout << "    integralL: " << integralL << endl;
+		cout << "    derivaticeL: " << derivativeL << endl;
+		cout << "    turnL: " << turnL << endl;
+		cout << "    leftMotorPower: " << leftMotorPower << endl;
+		cout << endl;
+			
+		
+		
+		
+		lastErrorC = errorC;
+		lastErrorL = errorL;
+//		cout << "motors: " << leftMotorPower << " | " << rightMotorPower << endl;
 	}
+	BP.reset_all();
 }
 
 int main(){
+	
 	signal(SIGINT, exit_signal_handler);
 
 	BP.detect();
@@ -164,14 +215,13 @@ int main(){
 	vector<vector<int>> sensorReads = {{}, {}};
 
 	calibrate(colors, lights);
-	processCalibration(colors, sensorReads);
-	processCalibration(lights, sensorReads);
+	processCalibrationColor(colors, sensorReads);
+	processCalibrationLight(lights, sensorReads);
 	
 	printCalibration(sensorReads);
-	
 	sleep(5);
 
-	startSteering(BP, sensorReads); // v1
+	startSteering(sensorReads); // v1
 	//startSteering2(BP); //v2
 }
 
