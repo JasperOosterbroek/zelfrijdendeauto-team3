@@ -93,9 +93,9 @@ void startSteering(const vector<vector<int>> & sensorReads ){
 	sensor_light_t Light3;
 	sensor_color_t Color1;
 	
-	int kp = 10; //1000
-	int ki = 1; //100
-	int kd = 100; //10000
+	int kp = 2; //1000
+	int ki = 0; //100
+	int kd = 0; //10000
 	int offsetC = (sensorReads[0][0] + sensorReads[0][1]) /2;
 	int offsetL = (sensorReads[1][2] + sensorReads[1][3]) /2;
 	
@@ -107,24 +107,24 @@ void startSteering(const vector<vector<int>> & sensorReads ){
 	int derivativeL = 0;
 	int errorC = 0;
 	int errorL = 0;
-	int tolleranceC = 5; //percentage
-	int tolleranceL = 5; //percentage
+	float tolleranceC = 1.0; //Percentage
+	float tolleranceL = 1.0; //Percentage
 	
-	int motorPower = -25;
+	
+	int motorPower = -50;
 	
 	while(true){
 		BP.get_sensor(PORT_4, Color1);
 		uint16_t valC = Color1.reflected_red;
 		// makes it so it cant go lower or higher
-		if(valC < sensorReads[0][0]) valC = sensorReads[0][0];
-		if(valC > sensorReads[0][1]) valC = sensorReads[0][1];
+//		if(valC < sensorReads[0][0]) valC = sensorReads[0][0];
+//		if(valC > sensorReads[0][1]) valC = sensorReads[0][1];
 		//int16_t leftmotorpower = (100*(val - sensorReads[0][1]))/(sensorReads[0][0]- sensorReads[0][1]);
-		if(valC > offsetC * ((100-tolleranceC)/100) && valC < offsetC * ((100+tolleranceC)/100) ){
+		if(valC > offsetC * ((100-tolleranceC)/100) && valC < offsetC * ((100+tolleranceC)/100)){
 			errorC = 0;
 		}else{
 			errorC = valC - offsetC;
 		}
-		
 		integralC = integralC + errorC;
 		derivativeC = errorC - lastErrorC;
 		int turnC = (kp*errorC) + (ki*integralC) + (kd*derivativeC);
@@ -134,10 +134,10 @@ void startSteering(const vector<vector<int>> & sensorReads ){
 		BP.get_sensor(PORT_3, Light3);
 		uint16_t valL = Light3.reflected;
 		// makes it so it cant go lower or higher
-		if(valL < sensorReads[1][2]) valL = sensorReads[1][2];
-		if(valL > sensorReads[1][3]) valL = sensorReads[1][3];
+//		if(valL < sensorReads[1][2]) valL = sensorReads[1][2];
+//		if(valL > sensorReads[1][3]) valL = sensorReads[1][3];
 		//int16_t rightmotorpower = (100*(val - sensorReads[1][2]))/(sensorReads[1][3] - sensorReads[1][2]);
-		if(valL > offsetL * ((100-tolleranceL)/100) && valL < offsetL * ((100+tolleranceL)/100) ){
+		if(valL > offsetL * ((100-tolleranceL)/100) && valL < offsetL * ((100+tolleranceL)/100)){
 			errorL = 0;
 		}else{
 			errorL = valL - offsetL;
@@ -219,7 +219,7 @@ int main(){
 	processCalibrationLight(lights, sensorReads);
 	
 	printCalibration(sensorReads);
-	sleep(5);
+	sleep(1);
 
 	startSteering(sensorReads); // v1
 	//startSteering2(BP); //v2
