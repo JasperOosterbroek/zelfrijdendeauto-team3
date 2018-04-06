@@ -14,7 +14,7 @@ void exit_signal_handler(int signo);
 BrickPi3 BP;
 
 int main(){
-	/*
+	/** \fn main
 	 * Main function to start the initialisation of motors and sensors.
 	 * 
 	 */

@@ -8,6 +8,11 @@
 #include <vector>
 using namespace std;
 
+/**
+ * @brief 
+ * @param BP The BrickPi3 controller
+ * @param sensorReads Data collected and processed from the calibration
+ */
 void startSteering(BrickPi3 BP, const sensorData & sensorReads);
 
 #endif

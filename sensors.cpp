@@ -2,12 +2,17 @@
 
 using namespace std;
 
-void calibrateLineSensors(BrickPi3 BP, vector<sensor_color_t> & colors, vector<sensor_light_t> & lights){
-/*
+/** 
+ * @param BP the brick pi controller
+ * @param colors an empty vector for color sensor structs
+ * @param lights an empty vector for light sensor structs
+ * 
  * Measures color and light values for 2.5s, after which it will move backwards 
  * and measure again for 2.5s.
  * Measurements are stored in sensor structs, which are pushed in a vector.
  */
+void calibrateLineSensors(BrickPi3 BP, vector<sensor_color_t> & colors, vector<sensor_light_t> & lights){
+
 	sensor_color_t Color1;
 	sensor_light_t Light3;
 	
@@ -30,13 +35,15 @@ void calibrateLineSensors(BrickPi3 BP, vector<sensor_color_t> & colors, vector<s
 	}
 }
 
-void processCalibrationColor(const vector<sensor_color_t> & colors, vector<vector<int>> & sensorReads){
-/*
+/**
+ * @param colors vector filled with colorsensor readings
+ * @param sensorReads empty vector in which to store processed data
  * 
  * Loops through the given vector of sensor structs, saving the lowest and 
  * highest reflected values in a vector
- * 
  */
+void processCalibrationColor(const vector<sensor_color_t> & colors, vector<vector<int>> & sensorReads){
+
 	int lowestRed = -1;
 	int highestRed = -1;
 	for(unsigned int i = 0; i < colors.size(); i++){
@@ -52,12 +59,15 @@ void processCalibrationColor(const vector<sensor_color_t> & colors, vector<vecto
 	sensorReads[0].push_back(highestRed);
 }
 
-void processCalibrationLight(const vector<sensor_light_t> & lights, vector<vector<int>> & sensorReads){
-/* 
+/**
+ * @param lights vector filled with lightsensor readings
+ * @param sensorReads empty vector in which to store processed data
+ * 
  * Loops through the given vector of sensor structs, saving the lowest and 
  * highest reflected values in a vector
- * 
  */ 
+void processCalibrationLight(const vector<sensor_light_t> & lights, vector<vector<int>> & sensorReads){
+
 	int lowestReflected = -1;
 	int highestReflected = -1;
 	for(unsigned int i = 0; i < lights.size(); i++){
@@ -72,12 +82,14 @@ void processCalibrationLight(const vector<sensor_light_t> & lights, vector<vecto
 	sensorReads[1].push_back(highestReflected);
 }
 
-sensorData processCalibration(BrickPi3 BP){
-/* 
+/** 
+ * @param BP the brickpi controller
+ * 
  * Initializes a struct sensorData and adds the gathered values from 
  * processCalibrationColor and processCalibrationLight
- * 
  */
+sensorData processCalibration(BrickPi3 BP){
+
  	vector<sensor_color_t> colors = {};
 	vector<sensor_light_t> lights = {};
 	// sensorreads i = type sensor (0 = color, 1 = light) j = type info (0,0 = reflected red | 1,0 = reflected ambient
@@ -94,10 +106,13 @@ sensorData processCalibration(BrickPi3 BP){
 	return s;
 }
 
-void printSensorCalibration(const sensorData & s){
-/*
+/** 
+ * @param s the sensor data from which to print data
+ * 
  * Prints the given struct in cout. 
  */ 
+void printSensorCalibration(const sensorData & s){
+
 	
 	cout << "Color info: " << endl;
 	cout << "    Min color: " << s.highestRed << endl;

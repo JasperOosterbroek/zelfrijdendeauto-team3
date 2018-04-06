@@ -7,6 +7,12 @@
 #include <vector>
 using namespace std;
 
+
+
+/**  
+ * This struct stores the highest and lowest values from the color and light
+ * sensor
+ */
 struct sensorData{
 	int highestRed;
 	int lowestRed;
