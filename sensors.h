@@ -14,10 +14,10 @@ using namespace std;
  * sensor
  */
 struct sensorData{
-	int highestRed;
-	int lowestRed;
-	int highestReflection;
-	int lowestReflection;
+	int highestRed; /**< Highest red reflection from colorsensor */
+	int lowestRed; /**< Lowest red reflection from colorsensor */
+	int highestReflection; /**< Highest reflection from light sensor */
+	int lowestReflection; /**< lowest reflection from light sensor */
 };
 
 void calibrateLineSensors(BrickPi3 BP, vector<sensor_color_t> & colors, vector<sensor_light_t> & lights);
