@@ -17,42 +17,42 @@ void startSteering(BrickPi3 BP, const sensorData & sensorReads ){
     sensor_light_t Light3;
     sensor_color_t Color1;
 
-    int power = -25;
+    int power = -20;
     while(true){
         // left sensor right motor
         BP.get_sensor(PORT_3, Light3);
         uint16_t val = Light3.reflected;
         if(val < sensorReads.lowestReflection) val = sensorReads.lowestReflection;
         if(val > sensorReads.highestReflection) val = sensorReads.highestReflection;
-        int16_t rightmotorpower = (100*(val - sensorReads.lowestReflection))/(sensorReads.highestReflection - sensorReads.lowestReflection);
+        int16_t rightmotorpower = (100*(val - sensorReads.lowestReflection)/(sensorReads.highestReflection - sensorReads.lowestReflection));
 
-		cout << "Light / right motor stats:" << endl;
-		cout << "    Val: " << val << endl;
-		cout << "    sensorReads.lowestReflection: " << sensorReads.lowestReflection << endl;
-		cout << "    sensorReads.highestReflection: " << sensorReads.highestReflection << endl;
-		cout << "    rightmotorpower: " << rightmotorpower << endl;
-		cout << "    power + (rightmotorpower*-1): " << power + (rightmotorpower*-1) << endl;
+        cout << "Light / right motor stats:" << endl;
+        cout << "    Val: " << val << endl;
+        cout << "    sensorReads.lowestReflection: " << sensorReads.lowestReflection << endl;
+        cout << "    sensorReads.highestReflection: " << sensorReads.highestReflection << endl;
+        cout << "    rightmotorpower: " << rightmotorpower << endl;
+        cout << "    power + (rightmotorpower*-1): " << power + (rightmotorpower*-1) << endl;
 
         BP.get_sensor(PORT_4, Color1);
         val = Color1.reflected_red;
         if(val < sensorReads.lowestRed) val = sensorReads.lowestRed;
         if(val > sensorReads.highestRed) val = sensorReads.highestRed;
-        int16_t leftmotorpower = (100*(val - sensorReads.lowestRed))/(sensorReads.highestRed - sensorReads.lowestRed);
-		
-		cout << "Color / left motor stats:" << endl;
-		cout << "    Val: " << val << endl;
-		cout << "    sensorReads.lowestRed: " << sensorReads.lowestRed << endl;
-		cout << "    sensorReads.highestRed: " << sensorReads.highestRed << endl;
-		cout << "    leftmotorpower: " << leftmotorpower << endl;
-		cout << "    power + (leftmotorpower*-1): " << power + (leftmotorpower*-1) << endl;
-		
-//		if(rightmotorpower > 20){
-//			leftmotorpower = rightmotorpower*-1;
-//		}else if(leftmotorpower > 20){
-//			rightmotorpower = leftmotorpower*-1;
-//		}
+        int16_t leftmotorpower = 100 -(100*(val - sensorReads.lowestRed))/(sensorReads.highestRed - sensorReads.lowestRed);
 
-		cout << endl;
+        cout << "Color / left motor stats:" << endl;
+        cout << "    Val: " << val << endl;
+        cout << "    sensorReads.lowestRed: " << sensorReads.lowestRed << endl;
+        cout << "    sensorReads.highestRed: " << sensorReads.highestRed << endl;
+        cout << "    leftmotorpower: " << leftmotorpower << endl;
+        cout << "    power + (leftmotorpower*-1): " << power + (leftmotorpower*-1) << endl;
+
+        if(rightmotorpower > 40){
+            leftmotorpower = -40;
+        }else if(leftmotorpower > 40){
+            rightmotorpower = -40;
+        }
+
+        cout << endl;
 
         // right sensor left motor
         if(leftmotorpower < 10 && rightmotorpower < 10){
@@ -64,5 +64,26 @@ void startSteering(BrickPi3 BP, const sensorData & sensorReads ){
         }
         cout << "motors: " << leftmotorpower << " - " << rightmotorpower << endl;
         cout << endl;
+    }
+}
+
+/**
+ * @param BP The BrickPi3 controller
+ * @param direction The direction the robot has to turn to
+ *
+ * This function wil turn the robot on it's axis.
+ */
+
+void steering(BrickPi3 BP, const string & direction){
+    if(direction == "left"){
+        cout << "motor gaat naar links" << endl;
+        BP.set_motor_position_relative(PORT_B, -610);
+        BP.set_motor_position_relative(PORT_C, 610);
+    }else if(direction == "right"){
+        cout << "motor gaat naar rechts" << endl;
+        BP.set_motor_position_relative(PORT_B, 610);
+        BP.set_motor_position_relative(PORT_C, -610);
+    }else{
+        cout << "foute uitvoer, ingevoerde uitvoer: " << direction << endl;
     }
 }
