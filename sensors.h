@@ -7,8 +7,6 @@
 #include <vector>
 using namespace std;
 
-
-
 /**  
  * This struct stores the highest and lowest values from the color and light
  * sensor
@@ -29,4 +27,8 @@ void processCalibrationLight(const vector<sensor_light_t> & lights, vector<vecto
 sensorData processCalibration(BrickPi3 BP);
 
 void printSensorCalibration(const sensorData & sensorReads);
+
+bool isColorOnBlack(const sensorData & s, const int tollerance, const int & colorSensorReading);
+
+bool isLightOnBlack(const sensorData & s, const int tollerance, const int & lightSensorReading);
 #endif /* SENSORS_H */

@@ -2,6 +2,8 @@
 
 using namespace std;
 
+
+
 /** 
  * @param BP the brick pi controller
  * @param colors an empty vector for color sensor structs
@@ -123,4 +125,45 @@ void printSensorCalibration(const sensorData & s){
 	cout << "    Min reflect: "  << s.lowestReflection << endl;
 	cout << "    Max reflect: "  << s.highestReflection << endl;
 	cout << "    Reflect difference: "  << s.highestReflection - s.lowestReflection << endl;
+}
+
+/**
+ * @param s sensorData with the calibration required
+ * @param tollerance integer which indicates a percentage of tollerance (10 = 10%)
+ * @param colorSensorReading integer of the value measured by the colorsensor
+ * @return true if given colorSensorReading is between sensordata.lowestRed values with tollerance
+ * 
+ * This function determines of a given value of the colorsensor is on a black line.
+ * It checks if the given value is between the lowestRed value of the sensordata.
+ * LowestRed is increased and decreased with the tollerance to give a range of 
+ * acceptable values.
+ */
+bool isColorOnBlack(const sensorData & s, const int tollerance, const int & colorSensorReading){
+// black is low red high reflection 
+	float percentage = float(tollerance) / 100;
+	// between two values of red absorption 
+	if(colorSensorReading < (s.lowestRed * (1 + percentage)) && colorSensorReading > (s.lowestRed * (1 - percentage))){
+		return true;
+	}
+	return false;
+}
+
+/**
+ * @param s sensorData with the calibration required
+ * @param tollerance integer which indicates a percentage of tollerance (10 = 10%)
+ * @param lightSensorReading integer of the value measured by the lightsensor
+ * @return True if given lightSensorReading matches between sensorData.highestReflection with tollerance
+ *  
+ * This function determines of a given value of the lightsensor is on a black line.
+ * It checks if the given value is between the lowestRed value of the sensordata.
+ * LowestRed is increased and decreased with the tollerance to give a range of 
+ * acceptable values.
+ */
+bool isLightOnBlack(const sensorData & s, const int tollerance, const int & lightSensorReading){
+	float percentage = float(tollerance) / 100;
+	// between two values of light reflection
+	if(lightSensorReading < (s.highestReflection * (1 + percentage)) && lightSensorReading > (s.highestReflection * (1 - percentage))){
+		return true;
+	}
+	return false;
 }
