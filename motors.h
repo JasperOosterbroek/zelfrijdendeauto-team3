@@ -8,16 +8,8 @@
 #include <vector>
 using namespace std;
 
-/**
- * @brief 
- * @param BP The BrickPi3 controller
- * @param sensorReads Data collected and processed from the calibration
- */
-void startSteering(BrickPi3 BP, const sensorData & sensorReads);
-/**
- * @brief 
- * @param BP The BrickPi3 controller
- * @param direction The direction the robot has to turn to
- */
+void startSteering(BrickPi3 BP, const sensorData & sensorReads, bool obstacles);
 void steering(BrickPi3 BP, const string & direction);
+void swerve(BrickPi3 BP);
+
 #endif

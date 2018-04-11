@@ -32,5 +32,6 @@ bool isColorOnBlack(const sensorData & s, const int tollerance, const int & colo
 
 bool isLightOnBlack(const sensorData & s, const int tollerance, const int & lightSensorReading);
 
-int16_t ultrasoon_detectie(BrickPi3 BP);
+int16_t ultrasoon_detectie(BrickPi3 BP,sensor_ultrasonic_t afstand);
+
 #endif /* SENSORS_H */
