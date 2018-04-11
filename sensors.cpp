@@ -138,7 +138,7 @@ void printSensorCalibration(const sensorData & s){
  * LowestRed is increased and decreased with the tollerance to give a range of 
  * acceptable values.
  */
-bool isColorOnBlack(const sensorData & s, const int tollerance, const int & colorSensorReading){
+bool isColorOnBlack(const sensorData & s, const int & tollerance, const int & colorSensorReading){
 // black is low red high reflection 
 	float percentage = float(tollerance) / 100;
 	// between two values of red absorption 
@@ -159,7 +159,7 @@ bool isColorOnBlack(const sensorData & s, const int tollerance, const int & colo
  * LowestRed is increased and decreased with the tollerance to give a range of 
  * acceptable values.
  */
-bool isLightOnBlack(const sensorData & s, const int tollerance, const int & lightSensorReading){
+bool isLightOnBlack(const sensorData & s, const int & tollerance, const int & lightSensorReading){
 	float percentage = float(tollerance) / 100;
 	// between two values of light reflection
 	if(lightSensorReading < (s.highestReflection * (1 + percentage)) && lightSensorReading > (s.highestReflection * (1 - percentage))){
