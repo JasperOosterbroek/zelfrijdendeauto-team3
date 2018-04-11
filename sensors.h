@@ -31,4 +31,6 @@ void printSensorCalibration(const sensorData & sensorReads);
 bool isColorOnBlack(const sensorData & s, const int tollerance, const int & colorSensorReading);
 
 bool isLightOnBlack(const sensorData & s, const int tollerance, const int & lightSensorReading);
+
+int16_t ultrasoon_detectie(BrickPi3 BP);
 #endif /* SENSORS_H */

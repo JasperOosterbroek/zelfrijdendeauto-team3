@@ -167,3 +167,16 @@ bool isLightOnBlack(const sensorData & s, const int & tollerance, const int & li
 	}
 	return false;
 }
+
+/**
+
+ * 
+ * @param BP The brick pi controller
+ * @return The distance that the sensor reads.
+ */
+int16_t ultrasoon_detectie(BrickPi3 BP) {
+
+	BP.get_sensor(PORT_2, afstand);
+	float val = afstand.cm;
+	return val;
+}
