@@ -12,5 +12,5 @@ void startSteering(BrickPi3 BP, const sensorData & sensorReads, bool obstacles);
 void steering(BrickPi3 BP, const string & direction, const int & steps);
 void detectObject(BrickPi3 BP);
 void swerve(BrickPi3 BP);
-
+void findLined(BrickPi3 BP, string turnDirection);
 #endif

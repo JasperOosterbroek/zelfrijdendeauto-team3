@@ -2,76 +2,86 @@
 
 using namespace std;
 
-void swerve(BrickPi3 BP){
+void detectObject(BrickPi3 BP){
     sensor_ultrasonic_t afstand;
     bool isTurretRotated;
     int16_t detectie;
     // reset turret position as 0
     int turret = BP.reset_motor_encoder(PORT_D);
-
-    while(true){
-        detectie = ultrasoon_detectie(BP, afstand);
-        int32_t turret_positie = BP.get_motor_encoder(PORT_D);
-        // cout << "Detectie: " << detectie << endl;
-        if(turret_positie > -230 && turret_positie < -200){
-        isTurretRotated = true;
-        }else{
-            isTurretRotated = false;
+    detectie = ultrasoon_detectie(BP, afstand);
+    if(detectie >= 30){
+        cout << "detectie = " << detectie << endl;
+    }else if (detectie >= 25 && detectie < 30){
+        // punt gevonden
+        swerve(BP);
+    }else if(detectie == 0 ){
+        //ignore
+        cout << "sensor malfunction" << endl;
+    }else if(detectie < 25){
+        //oh shit terug
+        while(detectie < 25){
+            detectie = ultrasoon_detectie(BP, afstand);
+            cout << "Detectie: " << detectie << endl;
+            BP.set_motor_power(PORT_B, 20);
+            BP.set_motor_power(PORT_C, 20);
         }
-    
-        if(detectie >= 30){
-            cout << "detectie = " << detectie << endl;
-            //draai de onderkant van de tank terug als die niet meer het object ziet. kanon blijft nu gericht op de zijkant van het object
-            if(isTurretRotated){
-               cout << "turret rotated & detectie >= 30" << endl;
-               BP.set_motor_position_relative(PORT_B, -360);
-               BP.set_motor_position_relative(PORT_C, -360);
-               cout << "sleep 2 sec" << endl;
-               sleep(2);
-               cout << "turn right" << endl;
-               steering(BP , "right");
-               sleep(2);
-               cout << "Make space" << endl;
-               BP.set_motor_position_relative(PORT_B, -1440);
-               BP.set_motor_position_relative(PORT_C,-1440);
-
-               sleep(2);
-            }else{
-               cout << "turret not rotated & detectie >=30" << endl;
-               BP.set_motor_position_relative(PORT_B, -720);
-               BP.set_motor_position_relative(PORT_C, -720);
-               //steering("right");
-               //BP.set_motor_position_relative(PORT_B, -1080);
-               //BP.set_motor_position_relative(PORT_C, -1080);
-            }
-        }else if( detectie >=25 && detectie <30 ){
-            cout << " detectie = " << detectie << endl;
-                if(isTurretRotated){
-                    cout << "gogogogo"<< endl;
-                }else{
-                    steering(BP, "left");
-                    //BP.set_motor_position_relative(PORT_B, -360);
-
-                    // turret
-                    BP.set_motor_position(PORT_D,-210);
-                    // wacht tot onderkant en turret is gedraait
-                    sleep(2);
-                    // rijden waneer die 25 cm afstand heeft met de konon gericht op het opject
-                    BP.set_motor_power(PORT_B, -20);
-                    BP.set_motor_power(PORT_C, -20);
-                }
-        }else if(detectie <25){
-            cout << "detectie = " << detectie << endl;
-            if(isTurretRotated){
-                BP.set_motor_power(PORT_B, -20);
-                BP.set_motor_power(PORT_C, -20);
-            }else{
-                BP.set_motor_power(PORT_B, 20);
-                BP.set_motor_power(PORT_C, 20);
-            }
-        }
+        swerve(BP);
     }
+
+
 }
+
+void swerve(BrickPi3 BP){
+    sensor_ultrasonic_t afstand;
+    int16_t detectie;
+    // set turret
+    int turret = BP.reset_motor_encoder(PORT_D);
+    cout << "turret pos = "<< turret << endl;
+    BP.set_motor_position(PORT_D,-210);
+    // move to the left
+    steering(BP, "left", 610);
+    //go forward until the object ends
+    detectie = ultrasoon_detectie(BP, afstand);
+    int power = -25;
+    while(detectie < 30){
+        detectie = ultrasoon_detectie(BP, afstand);
+        cout << "Detectie: " << detectie << endl;
+        BP.set_motor_power(PORT_B,power);
+        BP.set_motor_power(PORT_C,power);
+    }
+    BP.set_motor_power(PORT_B, 0);
+    BP.set_motor_power(PORT_C, 0);
+    // extrra spacing
+    BP.set_motor_position_relative(PORT_B, -720);
+    BP.set_motor_position_relative(PORT_C, -720);
+    sleep(3);
+    steering(BP, "right", 610);
+
+    detectie = ultrasoon_detectie(BP, afstand);
+    while(detectie < 40){
+        detectie = ultrasoon_detectie(BP, afstand);
+        cout << "Detectie: " << detectie << endl;
+        BP.set_motor_power(PORT_B,power);
+        BP.set_motor_power(PORT_C,power);
+    }
+    BP.set_motor_power(PORT_B, 0);
+    BP.set_motor_power(PORT_C, 0);
+    BP.set_motor_position_relative(PORT_B, -1080);
+    BP.set_motor_position_relative(PORT_C, -1080);
+    sleep(3);
+    steering(BP, "right", 610);
+    // past object
+    // turret reset
+    BP.set_motor_position_relative(PORT_D, 210);
+    cout << "Best dodge in the history of dodges" << endl;
+    sleep(2);
+    //find the line
+
+    
+
+}
+
+ 
 
 
 /** 
@@ -93,7 +103,7 @@ void startSteering(BrickPi3 BP, const sensorData & sensorReads, bool obstacles )
     int power = -20;
     while(true){
         if(obstacles){
-            swerve(BP);
+            detectObject(BP);
         }
         // left sensor right motor
         BP.get_sensor(PORT_3, Light3);
@@ -165,3 +175,46 @@ void steering(BrickPi3 BP, const string & direction, const int & steps){
     sleep(2);
 }
 
+void findLine(BrickPi3 BP, string turnDirection){
+    // init sensors
+    sensor_light_t Light3;
+    sensor_color_t Color1;
+    
+    int tolerance = 10; // tolerance in percentage
+    
+    // get sensor val
+    BP.get_sensor(PORT_3, Light3);
+    BP.get_sensor(PORT_4, Color1);
+    uint16_t lightlow = Light3.reflected * (1 + percentage); 
+    uint16_t colorlow = Color1.reflected_red * (1 - percemtage); 
+
+
+    if(turnDirection == "left"){
+        int powerleft = 20;
+        int powerright = -20;
+        BP.get_sensor(PORT_3, Light3);
+        uint16_t val = Light3.reflected;
+        while(val > lightlow){
+            BP.get_sensor(PORT_3, Light3);
+            uint16_t val = Light3.reflected;
+            
+        }
+
+    }else if(turnDirection == "right"){
+        int powerleft = -20;
+        int powerright = 20;
+        BP.get_sensor(PORT_4, Color1);
+        val = Color1.reflected_red;
+        while(val < colorlow){
+            BP.get_sensor(PORT_4, Color1);
+            val = Color1.reflected_red;
+
+        }
+
+    }else{
+        cout << "Incorrect direction given in findline function." << endl;
+        return;
+
+    }
+
+}
