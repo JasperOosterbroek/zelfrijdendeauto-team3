@@ -150,17 +150,18 @@ void startSteering(BrickPi3 BP, const sensorData & sensorReads, bool obstacles )
  * This function wil turn the robot on it's axis.
  */
 
-void steering(BrickPi3 BP, const string & direction){
+void steering(BrickPi3 BP, const string & direction, const int & steps){
     if(direction == "left"){
         cout << "motor gaat naar links" << endl;
-        BP.set_motor_position_relative(PORT_B, -610);
-        BP.set_motor_position_relative(PORT_C, 610);
+        BP.set_motor_position_relative(PORT_B, steps*-1);
+        BP.set_motor_position_relative(PORT_C, steps);
     }else if(direction == "right"){
         cout << "motor gaat naar rechts" << endl;
-        BP.set_motor_position_relative(PORT_B, 610);
-        BP.set_motor_position_relative(PORT_C, -610);
+        BP.set_motor_position_relative(PORT_B, steps);
+        BP.set_motor_position_relative(PORT_C, steps*-1); //610
     }else{
         cout << "foute uitvoer, ingevoerde uitvoer: " << direction << endl;
     }
+    sleep(2);
 }
 
