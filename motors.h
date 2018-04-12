@@ -26,11 +26,11 @@ void startSteering(BrickPi3 BP, const sensorData & sensorReads, bool obstacles);
  *
  * This function wil turn the robot on it's axis.
  */
-void steering(BrickPi3 BP, const string & direction, const int & steps);
+void steering(BrickPi3 BP, const string & direction, const int & steps, const float & sleepCount = 1.0);
 
-void detectObject(BrickPi3 BP);
+void detectObject(BrickPi3 BP, const sensorData & sensorReads);
 
-void swerve(BrickPi3 BP);
+void swerve(BrickPi3 BP, const sensorData & sensorReads);
 
-void findLined(BrickPi3 BP, string turnDirection);
+void findLine(BrickPi3 BP, string turnDirection, const sensorData & sensorReads);
 #endif

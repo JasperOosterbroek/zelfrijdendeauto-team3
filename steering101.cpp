@@ -13,11 +13,11 @@ void exit_signal_handler(int signo);
 
 BrickPi3 BP;
 
-/** 
-* Main function to start the initialisation of motors and sensors.
-* 
-*/
 int main(){
+	/*
+	 * Main function to start the initialisation of motors and sensors.
+	 * 
+	 */
 	signal(SIGINT, exit_signal_handler);
 
 	BP.detect();
@@ -27,19 +27,19 @@ int main(){
 
 	BP.reset_motor_encoder(PORT_B); // Right motor
 	BP.reset_motor_encoder(PORT_C); // Left motor
-	
+
 	sensorData sensorReads = processCalibration(BP);
 	printSensorCalibration(sensorReads);
 	sleep(5);
 
-	startSteering(BP, sensorReads);
+	startSteering(BP, sensorReads, false); // v1
+	//startSteering2(BP); //v2
 }
 
-/**
- * @param signo integer for the ctrl + c command
- * Handels ctrl + c to gracefully shutdown the program 
- */ 
 void exit_signal_handler(int signo){
+	/*
+	 * Handels ctrl + c to gracefully shutdown the program 
+	 */ 
 	if(signo == SIGINT){
 		BP.reset_all();
 		exit(-2);
