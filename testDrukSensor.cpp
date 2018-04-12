@@ -13,6 +13,7 @@ bool pressed_detectie(){
 	bool pressed_value = Touch1.pressed;
 	return pressed_value;
 }
+// function for steering the robot
 void steering(string directionRobot){
 	if(directionRobot == "left"){
 		BP.set_motor_position_relative(PORT_B, -610);
@@ -32,12 +33,14 @@ int main(){
 		bool pressed;
 		while(true){
 			pressed = pressed_detectie();
-			if(pressed == true){		// robot will make a move to the left
+			if(pressed == true){		// robot will make a move to the right
 				steering("right");
 				sleep(2);
+				//moves forward
 				BP.set_motor_position_relative(PORT_B, -1100);
-				BP.set_motor_position_relative(PORT_C, -1100);					sleep(2);
+				BP.set_motor_position_relative(PORT_C, -1100);
 				sleep(2);
+				// moves to the left
 				steering("left");
 				sleep(2);
 				BP.set_motor_position_relative(PORT_B, -1100);
@@ -45,11 +48,13 @@ int main(){
 				sleep(2);
 			if (pressed == true){
 				sleep(2);
+				//moves to left to detect object
 				steering("left");
 				sleep(2);
 				BP.set_motor_position_relative(PORT_B, -200);
 				BP.set_motor_position_relative(PORT_C, -200);
 				sleep(2);
+				// moves to the right to avoid object
 				steering("right");
 				sleep(2);
 				BP.set_motor_position_relative(PORT_B, -800);
@@ -59,12 +64,14 @@ int main(){
 				sleep(2);
 				}
 			}else{
+				// drives with a steady rhythm
 				BP.set_motor_power(PORT_B, -20);
 				BP.set_motor_power(PORT_C, -20);
 			}
 			usleep(10000);
 		}
 }
+// Signal handler that will be called when Ctrl+C is pressed to stop the program
 void exit_signal_handler(int signo){
         if(signo == SIGINT){
                 BP.reset_all();
