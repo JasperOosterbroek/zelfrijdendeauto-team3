@@ -3,11 +3,7 @@
 using namespace std;
 
 void calibrateLineSensors(BrickPi3 BP, vector<sensor_color_t> & colors, vector<sensor_light_t> & lights){
-/*
- * Measures color and light values for 2.5s, after which it will move backwards 
- * and measure again for 2.5s.
- * Measurements are stored in sensor structs, which are pushed in a vector.
- */
+
 	sensor_color_t Color1;
 	sensor_light_t Light3;
 	
@@ -31,12 +27,7 @@ void calibrateLineSensors(BrickPi3 BP, vector<sensor_color_t> & colors, vector<s
 }
 
 void processCalibrationColor(const vector<sensor_color_t> & colors, vector<vector<int>> & sensorReads){
-/*
- * 
- * Loops through the given vector of sensor structs, saving the lowest and 
- * highest reflected values in a vector
- * 
- */
+
 	int lowestRed = -1;
 	int highestRed = -1;
 	for(unsigned int i = 0; i < colors.size(); i++){
@@ -53,11 +44,7 @@ void processCalibrationColor(const vector<sensor_color_t> & colors, vector<vecto
 }
 
 void processCalibrationLight(const vector<sensor_light_t> & lights, vector<vector<int>> & sensorReads){
-/* 
- * Loops through the given vector of sensor structs, saving the lowest and 
- * highest reflected values in a vector
- * 
- */ 
+
 	int lowestReflected = -1;
 	int highestReflected = -1;
 	for(unsigned int i = 0; i < lights.size(); i++){
@@ -73,11 +60,7 @@ void processCalibrationLight(const vector<sensor_light_t> & lights, vector<vecto
 }
 
 sensorData processCalibration(BrickPi3 BP){
-/* 
- * Initializes a struct sensorData and adds the gathered values from 
- * processCalibrationColor and processCalibrationLight
- * 
- */
+
  	vector<sensor_color_t> colors = {};
 	vector<sensor_light_t> lights = {};
 	// sensorreads i = type sensor (0 = color, 1 = light) j = type info (0,0 = reflected red | 1,0 = reflected ambient
@@ -95,9 +78,7 @@ sensorData processCalibration(BrickPi3 BP){
 }
 
 void printSensorCalibration(const sensorData & s){
-/*
- * Prints the given struct in cout. 
- */ 
+
 	
 	cout << "Color info: " << endl;
 	cout << "    Min color: " << s.highestRed << endl;
@@ -108,4 +89,30 @@ void printSensorCalibration(const sensorData & s){
 	cout << "    Min reflect: "  << s.lowestReflection << endl;
 	cout << "    Max reflect: "  << s.highestReflection << endl;
 	cout << "    Reflect difference: "  << s.highestReflection - s.lowestReflection << endl;
+}
+
+bool isColorOnBlack(const sensorData & s, const int & tollerance, const int & colorSensorReading){
+// black is low red high reflection 
+	float percentage = float(tollerance) / 100;
+	// between two values of red absorption 
+	if(colorSensorReading < (s.lowestRed * (1 + percentage)) && colorSensorReading > (s.lowestRed * (1 - percentage))){
+		return true;
+	}
+	return false;
+}
+
+bool isLightOnBlack(const sensorData & s, const int & tollerance, const int & lightSensorReading){
+	float percentage = float(tollerance) / 100;
+	// between two values of light reflection
+	if(lightSensorReading < (s.highestReflection * (1 + percentage)) && lightSensorReading > (s.highestReflection * (1 - percentage))){
+		return true;
+	}
+	return false;
+}
+
+int16_t ultrasoon_detectie(BrickPi3 BP, sensor_ultrasonic_t afstand) {
+
+	BP.get_sensor(PORT_2, afstand);
+	float val = afstand.cm;
+	return val;
 }

@@ -32,7 +32,7 @@ int main(){
 	printSensorCalibration(sensorReads);
 	sleep(5);
 
-	startSteering(BP, sensorReads); // v1
+	startSteering(BP, sensorReads, false); // v1
 	//startSteering2(BP); //v2
 }
 
