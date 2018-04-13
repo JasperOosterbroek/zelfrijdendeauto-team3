@@ -93,17 +93,23 @@ void setVehicle(vehicle & v, const course & c){
 }
 
 void turnVehicle(BrickPi3 BP, const int & previousDirectionY, const int & previousDirectionX, const vehicle & v){
+	cout << "previous coords = [" << previousDirectionX << "," << previousDirectionY << "]" << endl;
+	cout << "New coords = [" << v.directionX << "," << v.directionY << "]" << endl;
+	
 	if(v.directionY != previousDirectionY || v.directionX != previousDirectionX){
 		// 610 = 90 degree turn
 //		180 turns
 		if((previousDirectionX != v.directionX && previousDirectionY == v.directionY) || (previousDirectionY != v.directionY && previousDirectionX == v.directionX)){
-			steering(BP, "right", 1220);
+			steering(BP, "right", 1220, 2.0);
+			cout << "DRAAI OM AS HEEN";
 //		90 degree turn from y to x
 		}else if(previousDirectionX == 0 && previousDirectionX != v.directionX){
-			steering(BP, "right", 610 * v.directionX);
+			cout << "DRAAI VAN HOOGTE NAAR BREEDTE";
+			steering(BP, "right", 610 * v.directionX, 2.0);
 //		90 degree turn from x to y
 		}else if(previousDirectionY == 0 && previousDirectionY != v.directionY){
-			steering(BP, "right", 610 * v.directionY);
+			cout << "DRAAI VAN BREEDTE NAAR HOOGTE";
+			steering(BP, "right", 610 * v.directionY, 2.0);
 		}
 	}
 }
@@ -113,7 +119,7 @@ void moveToIntersection(BrickPi3 BP, const sensorData & sensorReads){
     sensor_light_t Light3;
     sensor_color_t Color1;
 	
-	int intersectionTollerance = 10; // 10 % tollerance
+	int intersectionTollerance = 25; // 10 % tollerance
 	bool foundIntersection = false;
     int power = -20;
 	while(!foundIntersection){
@@ -122,13 +128,13 @@ void moveToIntersection(BrickPi3 BP, const sensorData & sensorReads){
 		uint16_t valL = Light3.reflected;
 		if(valL < sensorReads.lowestReflection) valL = sensorReads.lowestReflection;
 		if(valL > sensorReads.highestReflection) valL = sensorReads.highestReflection;
-        int16_t rightmotorpower = (100*(val - sensorReads.lowestReflection)/(sensorReads.highestReflection - sensorReads.lowestReflection));
+        int16_t rightmotorpower = (100*(valL - sensorReads.lowestReflection)/(sensorReads.highestReflection - sensorReads.lowestReflection));
 		
 		BP.get_sensor(PORT_4, Color1);
 		uint16_t valC = Color1.reflected_red;
 		if(valC < sensorReads.lowestRed) valC = sensorReads.lowestRed;
 		if(valC > sensorReads.highestRed) valC = sensorReads.highestRed;
-        int16_t leftmotorpower = 100 -(100*(val - sensorReads.lowestRed))/(sensorReads.highestRed - sensorReads.lowestRed);
+        int16_t leftmotorpower = 100 -(100*(valC - sensorReads.lowestRed))/(sensorReads.highestRed - sensorReads.lowestRed);
 		
 		bool lightOnBlack = isLightOnBlack(sensorReads, intersectionTollerance, valL);
 		bool colorOnBlack = isColorOnBlack(sensorReads, intersectionTollerance, valC);
@@ -150,29 +156,38 @@ void moveToIntersection(BrickPi3 BP, const sensorData & sensorReads){
 			}else{
 				BP.set_motor_power(PORT_B, power + (rightmotorpower*-1));
 				BP.set_motor_power(PORT_C, power + (leftmotorpower*-1));
+			}
 		}
 	}
+	BP.set_motor_position_relative(PORT_B, -400);
+	BP.set_motor_position_relative(PORT_C, -400);
+	usleep(2000000);
 }
 
-void determineRoute(vehicle & ferdinand, const course & grid){
+void determineRoute(vehicle & ferdinand, course & grid){
+	cout << "Nieuwe directie [" << ferdinand.directionX << "," << ferdinand.directionY << "]" << endl;
 	// meaning the robot move left to right or right to left
+	cout << "CURRENT position on the grid: [" << ferdinand.posX << "," << ferdinand.posY << "]" << endl;
 	if(ferdinand.directionY == 0){
 		// moving from the left to the right
 		if(ferdinand.directionX == 1){
 			// go to the right
 			if(ferdinand.posX+1 < grid.roadMap[ferdinand.posY].size() && grid.roadMap[ferdinand.posY][ferdinand.posX+1] != 1){
+				cout << "from left to right check right" << endl;
 				ferdinand.directionX = 1;
 				ferdinand.directionY = 0;
 			// check downwards
 			}else if(ferdinand.posY+1 < grid.roadMap.size() && grid.roadMap[ferdinand.posY+1][ferdinand.posX] != 1){
+				cout << "from left to right check down" << endl;
 				ferdinand.directionX = 0;
 				ferdinand.directionY = 1;
 			// check above
 			}else if(ferdinand.posY-1 >= 0 && grid.roadMap[ferdinand.posY-1][ferdinand.posX] != 1){
+				cout << "from left to right check up" << endl;
 				ferdinand.directionX = 0;
 				ferdinand.directionY = -1;
 			}else{
-				cout << "GRID ROUTE AFGEBLOKD OP: [" << ferdinand.posX << "," << ferdinand.posY "]" << endl;
+				cout << "GRID ROUTE AFGEBLOKD OP: [" << ferdinand.posX << "," << ferdinand.posY << "]" << endl;
 				ferdinand.directionX = -1;
 				ferdinand.directionY = 0;
 				grid.roadMap[ferdinand.posY][ferdinand.posX] = 1;
@@ -181,18 +196,21 @@ void determineRoute(vehicle & ferdinand, const course & grid){
 		}else if(ferdinand.directionX == -1){
 			// downwards
 			if(ferdinand.posY+1 < grid.roadMap.size() && grid.roadMap[ferdinand.posY+1][ferdinand.posX] != 1){
+				cout << "from right to left check down" << endl;
 				ferdinand.directionX = 0;
 				ferdinand.directionY = 1;
 			// above
 			}else if(ferdinand.posY-1 >= 0 && grid.roadMap[ferdinand.posY-1][ferdinand.posX] != 1){
+				cout << "from right to left check up" << endl;
 				ferdinand.directionX = 0;
 				ferdinand.directionY = -1;
 			// to the left
 			}else if(ferdinand.posX-1 < grid.roadMap[ferdinand.posY].size() && grid.roadMap[ferdinand.posY][ferdinand.posX-1] != 1){
+				cout << "from right to left check left" << endl;
 				ferdinand.directionX = -1;
 				ferdinand.directionY = 0;
 			}else{
-				cout << "GRID ROUTE AFGEBLOKD OP: [" << ferdinand.posX << "," << ferdinand.posY "]" << endl;
+				cout << "GRID ROUTE AFGEBLOKD OP: [" << ferdinand.posX << "," << ferdinand.posY << "]" << endl;
 				ferdinand.directionX = 1;
 				ferdinand.directionY = 0;
 				grid.roadMap[ferdinand.posY][ferdinand.posX] = 1;
@@ -204,18 +222,21 @@ void determineRoute(vehicle & ferdinand, const course & grid){
 		if(ferdinand.directionY == 1){
 			// to the right
 			if(ferdinand.posX+1 < grid.roadMap[ferdinand.posY].size() && grid.roadMap[ferdinand.posY][ferdinand.posX+1] != 1){
+				cout << "from up to down check right" << endl;
 				ferdinand.directionX = 1;
 				ferdinand.directionY = 0;
 			// downwards
-			}else if(ferdinand.posY+1 >= grid.roadMap.size() && grid.roadMap[ferdinand.posY+1][ferdinand.posX] != 1){
+			}else if(ferdinand.posY+1 < grid.roadMap.size() && grid.roadMap[ferdinand.posY+1][ferdinand.posX] != 1){
+				cout << "from up to down check down" << endl;
 				ferdinand.directionX = 0;
 				ferdinand.directionY = 1;
 			// to the left
 			}else if(ferdinand.posX-1 < grid.roadMap[ferdinand.posY].size() && grid.roadMap[ferdinand.posY][ferdinand.posX-1] != 1){
+				cout << "from up to down check left" << endl;
 				ferdinand.directionX = -1;
 				ferdinand.directionY = 0;
 			}else{
-				cout << "GRID ROUTE AFGEBLOKD OP: [" << ferdinand.posX << "," << ferdinand.posY "]" << endl;
+				cout << "GRID ROUTE AFGEBLOKD OP: [" << ferdinand.posX << "," << ferdinand.posY << "]" << endl;
 				ferdinand.directionX = 0;
 				ferdinand.directionY = -1;
 				grid.roadMap[ferdinand.posY][ferdinand.posX] = 1;
@@ -224,24 +245,28 @@ void determineRoute(vehicle & ferdinand, const course & grid){
 		}else if(ferdinand.directionY == -1){
 			 // to the right
 			if(ferdinand.posX+1 < grid.roadMap[ferdinand.posY].size() && grid.roadMap[ferdinand.posY][ferdinand.posX+1] != 1){
+				cout << "from down to up check right" << endl;
 				ferdinand.directionX = 1;
 				ferdinand.directionY = 0;
-			// downwards
-			}else if(ferdinand.posY+1 >= 0 && grid.roadMap[ferdinand.posY+1][ferdinand.posX] != 1){
+			// updwards
+			}else if(ferdinand.posY-1 >= 0 && grid.roadMap[ferdinand.posY-1][ferdinand.posX] != 1){
+				cout << "from down to up check up" << endl;
 				ferdinand.directionX = 0;
 				ferdinand.directionY = 1;
 			// to the left
 			}else if(ferdinand.posX-1 < grid.roadMap[ferdinand.posY].size() && grid.roadMap[ferdinand.posY][ferdinand.posX-1] != 1){
+				cout << "from down to up check left" << endl;
 				ferdinand.directionX = -1;
 				ferdinand.directionY = 0;
 			}else{
-				cout << "GRID ROUTE AFGEBLOKD OP: [" << ferdinand.posX << "," << ferdinand.posY "]" << endl;
+				cout << "GRID ROUTE AFGEBLOKD OP: [" << ferdinand.posX << "," << ferdinand.posY << "]" << endl;
 				ferdinand.directionX = 0;
 				ferdinand.directionY = -1;
 				grid.roadMap[ferdinand.posY][ferdinand.posX] = 1;
 			}
 		}
 	}
+	
 }
 
 void gridsteering(BrickPi3 BP, const sensorData & sensorReads ){
@@ -255,63 +280,78 @@ void gridsteering(BrickPi3 BP, const sensorData & sensorReads ){
 
 
     int power = -20;
-    while(ferdinand.posX != grid.targetX && ferdinand.posY != grid.targetY){
-		
-
+    while(ferdinand.posX != grid.targetX-1 || ferdinand.posY != grid.targetY-1){
 		// ultrasonic sensor checking for obstacle pseudocode
 		sensor_ultrasonic_t ult;
 		int16_t distance = ultrasoon_detectie(BP, ult);
 //		check 28cm of distance
 		if(distance > 24 && distance <= 30){
+			cout << "OBJECT FOUND" << endl;
 //			Get pos of next intersection, and set it as obstacle.
 			int nextX = ferdinand.posX + ferdinand.directionX;
 			int nextY = ferdinand.posY + ferdinand.directionY;
 			grid.roadMap[nextY][nextX] = 1;
 			steering(BP, "right", 1220);
 			moveToIntersection(BP, sensorReads);
-			
 		}
-	
-//		Saving the values to determine the turn needed to make
-		int previousDirectionY = ferdinand.directionY;
-		int previousDirectionX = ferdinand.directionX;
-		determineRoute(ferdinand, grid);
 		
-		turnVehicle(BP,previousDirectionY,previousDirectionX, ferdinand);
         // left sensor right motor
         BP.get_sensor(PORT_3, Light3);
-        uint16_t val = Light3.reflected;
-        if(val < sensorReads.lowestReflection) val = sensorReads.lowestReflection;
-        if(val > sensorReads.highestReflection) val = sensorReads.highestReflection;
-        int16_t rightmotorpower = (100*(val - sensorReads.lowestReflection)/(sensorReads.highestReflection - sensorReads.lowestReflection));
+        uint16_t valL = Light3.reflected;
+        if(valL < sensorReads.lowestReflection) valL = sensorReads.lowestReflection;
+        if(valL > sensorReads.highestReflection) valL = sensorReads.highestReflection;
+        int16_t rightmotorpower = (100*(valL - sensorReads.lowestReflection)/(sensorReads.highestReflection - sensorReads.lowestReflection));
 
 //        cout << "Light / right motor stats:" << endl;
-//        cout << "    Val: " << val << endl;
+//        cout << "    valL: " << valL << endl;
 //        cout << "    sensorReads.lowestReflection: " << sensorReads.lowestReflection << endl;
 //        cout << "    sensorReads.highestReflection: " << sensorReads.highestReflection << endl;
 //        cout << "    rightmotorpower: " << rightmotorpower << endl;
 //        cout << "    power + (rightmotorpower*-1): " << power + (rightmotorpower*-1) << endl;
 
         BP.get_sensor(PORT_4, Color1);
-        val = Color1.reflected_red;
-        if(val < sensorReads.lowestRed) val = sensorReads.lowestRed;
-        if(val > sensorReads.highestRed) val = sensorReads.highestRed;
-        int16_t leftmotorpower = 100 -(100*(val - sensorReads.lowestRed))/(sensorReads.highestRed - sensorReads.lowestRed);
+        uint16_t valC = Color1.reflected_red;
+        if(valC < sensorReads.lowestRed) valC = sensorReads.lowestRed;
+        if(valC > sensorReads.highestRed) valC = sensorReads.highestRed;
+        int16_t leftmotorpower = 100 -(100*(valC - sensorReads.lowestRed))/(sensorReads.highestRed - sensorReads.lowestRed);
 
 //        cout << "Color / left motor stats:" << endl;
-//        cout << "    Val: " << val << endl;
+//        cout << "    valC: " << valC << endl;
 //        cout << "    sensorReads.lowestRed: " << sensorReads.lowestRed << endl;
 //        cout << "    sensorReads.highestRed: " << sensorReads.highestRed << endl;
 //        cout << "    leftmotorpower: " << leftmotorpower << endl;
 //        cout << "    power + (leftmotorpower*-1): " << power + (leftmotorpower*-1) << endl;
 
+		int intersectionTollerance = 20; // 10 % tollerance
+		bool lightOnBlack = isLightOnBlack(sensorReads, intersectionTollerance, valL);
+		bool colorOnBlack = isColorOnBlack(sensorReads, intersectionTollerance, valC);
+		if(colorOnBlack && lightOnBlack){
+		//	Saving the values to determine the turn needed to make
+			int previousDirectionY = ferdinand.directionY;
+			int previousDirectionX = ferdinand.directionX;
+			ferdinand.posX += ferdinand.directionX;
+			ferdinand.posY += ferdinand.directionY;
+			cout << "Kruispunt gevonden!" << endl;
+			
+			cout << "Oude directie [" << previousDirectionX << "," << previousDirectionY << "]" << endl;
+			determineRoute(ferdinand, grid);
+			
+			
+			BP.set_motor_position_relative(PORT_B, -400);
+			BP.set_motor_position_relative(PORT_C, -400);
+			sleep(1);
+			turnVehicle(BP,previousDirectionY,previousDirectionX, ferdinand);
+			sleep(2);
+		}
+		
+		
         if(rightmotorpower > 40){
             leftmotorpower = -40;
         }else if(leftmotorpower > 40){
             rightmotorpower = -40;
         }
 
-        cout << endl;
+//        cout << endl;
 
         // right sensor left motor
         if(leftmotorpower < 10 && rightmotorpower < 10){
@@ -321,9 +361,11 @@ void gridsteering(BrickPi3 BP, const sensorData & sensorReads ){
             BP.set_motor_power(PORT_B, power + (rightmotorpower*-1));
             BP.set_motor_power(PORT_C, power + (leftmotorpower*-1));
         }
-        cout << "motors: " << leftmotorpower << " - " << rightmotorpower << endl;
-        cout << endl;
+//        cout << "motors: " << leftmotorpower << " - " << rightmotorpower << endl;
+//        cout << endl;
     }
+	cout << "WE ZIJN TROTS OP FERDINAND" << endl;
+	
 }
 
 
@@ -346,6 +388,7 @@ int main(){
 	printSensorCalibration(sensorReads);
 	sleep(5);
 	gridsteering(BP, sensorReads);
+	BP.reset_all();
 }
 
 /**
