@@ -9,7 +9,7 @@ void detectObject(BrickPi3 BP, const sensorData & sensorReads){
     detection = ultrasoon_detectie(BP, ultrasonic);
     if(detection >= 30){
         cout << "detectie = " << detection << endl;
-    }else if (detection >= 25 && detection < 30){
+    }else if (detection >= 25 && detection < 25){
         // punt gevonden
         swerve(BP, sensorReads);
     }else if(detection == 0 ){
@@ -33,7 +33,7 @@ void swerve(BrickPi3 BP, const sensorData & sensorReads){
     sensor_ultrasonic_t ultrasonic;
     sensor_light_t Light3;
     sensor_color_t Color1;
-    int intersectionTollerance = 25; // 10 % tollerance
+    int intersectionTollerance = 25; // 25 % tollerance
 
     int16_t detection;
     // set turret
@@ -75,16 +75,26 @@ void swerve(BrickPi3 BP, const sensorData & sensorReads){
         BP.set_motor_power(PORT_B,power);
         BP.set_motor_power(PORT_C,power);
     }
+
     BP.set_motor_power(PORT_B, 0);
     BP.set_motor_power(PORT_C, 0);
     // extrra spacing
-    BP.set_motor_position_relative(PORT_B, -280);
-    BP.set_motor_position_relative(PORT_C, -280);
+    BP.set_motor_position_relative(PORT_B, -360);
+    BP.set_motor_position_relative(PORT_C, -360);
     sleep(3);
-    steering(BP, "right", 610);
+    steering(BP, "right", 620);
 
     detection = ultrasoon_detectie(BP, ultrasonic);
-    while(detection < 40){
+    while(detection > 30 && detection != -1){
+        detection = ultrasoon_detectie(BP, ultrasonic);
+        cout << "Waar is dat object?" << endl;
+        BP.set_motor_power(PORT_B, power);
+        BP.set_motor_power(PORT_C, power);
+    }
+    cout << "Hier is dat object" << endl;
+    detection = ultrasoon_detectie(BP, ultrasonic);
+
+    while(detection < 30){
         detection = ultrasoon_detectie(BP, ultrasonic);
         cout << "Detectie: " << detection << endl;
 
@@ -115,11 +125,13 @@ void swerve(BrickPi3 BP, const sensorData & sensorReads){
     }
     BP.set_motor_power(PORT_B, 0);
     BP.set_motor_power(PORT_C, 0);
-    BP.set_motor_position_relative(PORT_B, -1000);
-    BP.set_motor_position_relative(PORT_C, -1000);
+    
     sleep(3);
     steering(BP, "right", 610);
     // past object
+    
+    BP.set_motor_power(PORT_B, 0);
+    BP.set_motor_power(PORT_C, 0);
     // turret reset
     BP.set_motor_position_relative(PORT_D, 210);
     cout << "Best swerve in the history of swerves" << endl;
