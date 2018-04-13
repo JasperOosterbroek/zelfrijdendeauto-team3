@@ -134,7 +134,6 @@ void swerve(BrickPi3 BP, const sensorData & sensorReads){
     BP.set_motor_power(PORT_C, 0);
     // turret reset
     BP.set_motor_position_relative(PORT_D, 210);
-    cout << "Best swerve in the history of swerves" << endl;
     sleep(2);
     //find the line
     float tolerance = 0.75;
@@ -182,28 +181,9 @@ void swerve(BrickPi3 BP, const sensorData & sensorReads){
         BP.set_motor_power(PORT_C, -20);
     }
 
-
-    // while(valColor > colorlow && valLight < lightlow){
-    //     BP.get_sensor(PORT_4, Color1);
-    //     uint16_t valColor = Color1.reflected_red;
-    
-    //     BP.get_sensor(PORT_3, Light3);
-    //     uint16_t valLight = Light3.reflected;
-
-    //     BP.set_motor_power(PORT_B, -20);
-    //     BP.set_motor_power(PORT_C, -20);
-    //     cout << "read values:" << endl;
-    //     cout << "val light = " << valLight << endl;
-    //     cout << "val color = " << valColor << endl;
-
-    //     cout << "compare values:" << endl;
-    //     cout << "lightlow = " << lightlow << endl;
-    //     cout << "colorlow = " << colorlow << endl;
-    // }
     BP.set_motor_power(PORT_B, 0);
     BP.set_motor_power(PORT_C, 0);
     findLine(BP, "left", sensorReads);
-    cout << "done deal yo" << endl;
     sleep(1);
 
 }
@@ -280,7 +260,7 @@ void steering(BrickPi3 BP, const string & direction, const int & steps, const fl
         BP.set_motor_position_relative(PORT_B, steps);
         BP.set_motor_position_relative(PORT_C, steps*-1); //610
     }else{
-        cout << "foute uitvoer, ingevoerde uitvoer: " << direction << endl;
+        cout << "foute richting, ingevoerde richting: " << direction << endl;
     }
     usleep(sleepCount*1000000);
 }
@@ -315,15 +295,7 @@ void findLine(BrickPi3 BP, string turnDirection, const sensorData & sensorReads)
             colorOnBlack = isColorOnBlack(sensorReads, intersectionTollerance, valC);
 
         }
-        // int powerleft = 20;
-        // int powerright = -20;
-        // BP.get_sensor(PORT_3, Light3);
-        // uint16_t val = Light3.reflected;
-        // while(val > lightlow){
-        //     BP.get_sensor(PORT_3, Light3);
-        //     val = Light3.reflected;
-        //     steering(BP, "left", 1);
-        // }
+
 
     }else if(turnDirection == "right"){
         int intersectionTollerance = 25; // 10 % tollerance
@@ -337,15 +309,6 @@ void findLine(BrickPi3 BP, string turnDirection, const sensorData & sensorReads)
             
             bool lightOnBlack = isLightOnBlack(sensorReads, intersectionTollerance, valL);
         }
-        // int powerleft = -20;
-        // int powerright = 20;
-        // BP.get_sensor(PORT_4, Color1);
-        // uint16_t val = Color1.reflected_red;
-        // while(val < colorlow){
-        //     BP.get_sensor(PORT_4, Color1);
-        //     val = Color1.reflected_red;
-        //     steering(BP, "right", 1);
-        // }
 
     }else{
         cout << "Incorrect direction given in findline function." << endl;
