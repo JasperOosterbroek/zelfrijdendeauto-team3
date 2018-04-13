@@ -73,7 +73,7 @@ void printSensorCalibration(const sensorData & sensorReads);
  * LowestRed is increased and decreased with the tollerance to give a range of 
  * acceptable values.
  */
-bool isColorOnBlack(const sensorData & s, const int tollerance, const int & colorSensorReading);
+bool isColorOnBlack(const sensorData & s, const int & tollerance, const int & colorSensorReading);
 
 /**
  * @param s sensorData with the calibration required
@@ -86,7 +86,7 @@ bool isColorOnBlack(const sensorData & s, const int tollerance, const int & colo
  * LowestRed is increased and decreased with the tollerance to give a range of 
  * acceptable values.
  */
-bool isLightOnBlack(const sensorData & s, const int tollerance, const int & lightSensorReading);
+bool isLightOnBlack(const sensorData & s, const int & tollerance, const int & lightSensorReading);
 
 /**
  * @param BP The brick pi controller

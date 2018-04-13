@@ -2,8 +2,6 @@
 
 using namespace std;
 
-
-
 void calibrateLineSensors(BrickPi3 BP, vector<sensor_color_t> & colors, vector<sensor_light_t> & lights){
 
 	sensor_color_t Color1;
